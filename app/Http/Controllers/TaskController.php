@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Client;
 use App\Models\Task;
 use App\Models\TaskCategory;
+use App\Models\TaskTag;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -27,6 +28,7 @@ class TaskController extends Controller
 
         $users = User::where('status', 'active')->get();
         $clients = Client::where('status', 'active')->get();
+        $tags = TaskTag::get();
 
         // Format response as category => tasks
         $response = $categories->map(function ($category) {
@@ -38,6 +40,7 @@ class TaskController extends Controller
                     'id' => $task->id,
                     'title' => $task->title,
                     'description' => $task->description,
+                    'tags' => $task->tags,
                     'assignee' => $task->assignee ? [
                         'id' => $task->assignee->id,
                         'name' => $task->assignee->name
@@ -70,6 +73,7 @@ class TaskController extends Controller
             'success' => true,
             'users' => $users,
             'clients' => $clients,
+            'tags' => $tags,
             'data' => $response
         ]);
     }
@@ -142,4 +146,28 @@ class TaskController extends Controller
 
         return response()->json($tasks);
     }
+
+    public function updateTags(Request $request, Task $task)
+    {
+        // Validate incoming tags as an array of strings
+        $data = $request->validate([
+            'tags' => 'nullable|array',
+            'tags.*' => 'string|max:255',
+        ]);
+
+        // If empty array or null, set tags to null
+        if (empty($data['tags'])) {
+            $task->tags = null;
+        } else {
+            $task->tags = $data['tags']; // Laravel auto-encodes to JSON
+        }
+
+        $task->save();
+
+        return response()->json([
+            'message' => 'Tags updated successfully.',
+            'task' => $task
+        ]);
+    }
+
 }

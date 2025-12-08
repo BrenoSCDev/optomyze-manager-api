@@ -15,6 +15,7 @@ use App\Http\Controllers\ProspectTagController;
 use App\Http\Controllers\TaskCategoryController;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskDocController;
+use App\Http\Controllers\TaskTagController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -83,6 +84,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/prospect-tags/{prospectTag}', [ProspectTagController::class, 'show']);
     Route::put('/prospect-tags/{prospectTag}', [ProspectTagController::class, 'update']);
     Route::delete('/prospect-tags/{prospectTag}', [ProspectTagController::class, 'destroy']);
+    
+    Route::get('/task-tags', [TaskTagController::class, 'index']);
+    Route::post('/task-tags', [TaskTagController::class, 'store']);
+    Route::get('/task-tags/{taskTag}', [TaskTagController::class, 'show']);
+    Route::put('/task-tags/{taskTag}', [TaskTagController::class, 'update']);
+    Route::delete('/task-tags/{taskTag}', [TaskTagController::class, 'destroy']);
 
     Route::get('/settings', [DataController::class, 'getSettings']);
     Route::get('/dashboard', [DataController::class, 'dashboard']);
@@ -94,6 +101,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tasks/{task}', [TaskController::class, 'update']);
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
     Route::get('/task-categories/{category}/tasks', [TaskController::class, 'tasksByCategory']);
+    Route::post('/tasks/{task}/tags', [TaskController::class, 'updateTags']);
 
     Route::post('/tasks/docs', [TaskDocController::class, 'store']);
     Route::delete('/tasks/docs/{id}', [TaskDocController::class, 'destroy']);

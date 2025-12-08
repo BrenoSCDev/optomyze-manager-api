@@ -9,6 +9,7 @@ use App\Models\TaskCategory;
 use App\Models\ClientTag;
 use App\Models\ProspectTag;
 use App\Models\Task;
+use App\Models\TaskTag;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 
@@ -20,7 +21,8 @@ class DataController extends Controller
             'success' => true,
             'task_categories' => TaskCategory::all(),
             'client_tags' => ClientTag::all(),
-            'prospect_tags' => ProspectTag::all()
+            'prospect_tags' => ProspectTag::all(),
+            'task_tags' => TaskTag::all(),
         ]);
     }
 

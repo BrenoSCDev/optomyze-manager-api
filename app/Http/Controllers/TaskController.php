@@ -150,6 +150,31 @@ class TaskController extends Controller
 
         $task->load(['assignee', 'client']);
 
+        if ($task->assignee) {
+            Http::post(
+                'https://optomyze-n8n.kmfrpu.easypanel.host/webhook/c8c7a3fd-d623-4c95-94cd-08c8ed25a767',
+                [
+                    'event' => 'task_created',
+                    'task' => [
+                        'id'       => $task->id,
+                        'title'    => $task->title,
+                        'priority' => $task->priority,
+                        'due_date' => $task->due_date,
+                    ],
+                    'assignee' => [
+                        'id'    => $task->assignee->id,
+                        'name'  => $task->assignee->name,
+                        'email' => $task->assignee->email,
+                        'phone' => $task->assignee->phone,
+                    ],
+                    'message' => sprintf(
+                        'Sua tarefa foi atualizado no Optomyze Manager: "%s". Acesse https://manager.optomyze.io para visualizar os detalhes.',
+                        $task->title
+                    ),
+                ]
+            );
+        }
+
         return response()->json([
             'success' => true,
             'task' => $task

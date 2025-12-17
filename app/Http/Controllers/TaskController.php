@@ -114,7 +114,7 @@ class TaskController extends Controller
                         'phone' => $task->assignee->phone,
                     ],
                     'message' => sprintf(
-                        'Uma nova tarefa foi atribuída a você no Optomyze Manager: "%s". Acesse https://manager.optomyze.io/tasks para visualizar os detalhes.',
+                        'Uma nova tarefa foi atribuída a você no Optomyze Manager: "%s". Acesse https://manager.optomyze.io para visualizar os detalhes.',
                         $task->title
                     ),
                 ]

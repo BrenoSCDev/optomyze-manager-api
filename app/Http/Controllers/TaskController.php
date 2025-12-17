@@ -9,6 +9,7 @@ use App\Models\TaskTag;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Http;
 
 class TaskController extends Controller
 {
@@ -94,6 +95,32 @@ class TaskController extends Controller
         $task = Task::create($validated);
 
         $task->load(['assignee', 'client']);
+
+        if ($task->assignee) {
+            Http::post(
+                'https://optomyze-n8n.kmfrpu.easypanel.host/webhook/c8c7a3fd-d623-4c95-94cd-08c8ed25a767',
+                [
+                    'event' => 'task_created',
+                    'task' => [
+                        'id'       => $task->id,
+                        'title'    => $task->title,
+                        'priority' => $task->priority,
+                        'due_date' => $task->due_date,
+                    ],
+                    'assignee' => [
+                        'id'    => $task->assignee->id,
+                        'name'  => $task->assignee->name,
+                        'email' => $task->assignee->email,
+                        'phone' => $task->assignee->phone,
+                    ],
+                    'message' => sprintf(
+                        'Uma nova tarefa foi atribuída a você no Optomyze Manager: "%s". Acesse https://manager.optomyze.io/tasks para visualizar os detalhes.',
+                        $task->title
+                    ),
+                ]
+            );
+        }
+
 
         return response()->json([
             'success' => true,

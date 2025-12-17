@@ -107,9 +107,9 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user): JsonResponse
     {
-        $validator = Validator::make($request->all(), [
+        $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'email' => ['sometimes', 'required', 'string', 'email', 'max:255'],
             'phone' => 'nullable|string|max:20',
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'sometimes|required|in:admin,agent',
@@ -122,23 +122,12 @@ class UserController extends Controller
             'country' => 'nullable|string|max:2',
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after:start_date',
+            'department_id' => 'nullable|exists:departments,id'
         ]);
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors(),
-            ], 422);
-        }
+        $user->update($validated);
 
-        $data = $request->except(['password', 'password_confirmation']);
-        
-        if ($request->filled('password')) {
-            $data['password'] = Hash::make($request->password);
-        }
-
-        $user->update($data);
+        $user->load('department');
 
         return response()->json([
             'success' => true,

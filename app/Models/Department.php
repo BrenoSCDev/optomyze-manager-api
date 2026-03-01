@@ -15,10 +15,11 @@ class Department extends Model
         'head_of_department_id',
     ];
 
-    // Relationship: Department has many Users
+    // Relationship: Department belongs to many Users (pivot: department_user)
     public function users()
     {
-        return $this->hasMany(User::class);
+        return $this->belongsToMany(User::class, 'department_user')
+                    ->select(['users.id', 'users.name', 'users.email', 'users.title', 'users.avatar']);
     }
 
     // Relationship: The head of the department (User)

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Http\Controllers\TaskController;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,7 +14,6 @@ class Task extends Model
         'client_id',
         'title',
         'description',
-        'assignee_id',
         'priority',
         'due_date',
     ];
@@ -30,15 +28,10 @@ class Task extends Model
         return $this->belongsTo(Client::class);
     }
 
-    public function assignee()
+    public function assignees()
     {
-        return $this->belongsTo(User::class, 'assignee_id');
-    }
-
-    public function type()
-    {
-        // replace 'task_category_id' with the actual FK column in your tasks table
-        return $this->belongsTo(TaskCategory::class, 'task_category_id');
+        return $this->belongsToMany(User::class, 'task_user')
+                    ->select(['users.id', 'users.name', 'users.email', 'users.avatar', 'users.title']);
     }
 
     public function docs()

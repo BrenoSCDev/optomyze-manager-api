@@ -25,7 +25,6 @@ class User extends Authenticatable implements MustVerifyEmail
         'status',
         'avatar',
         'title',
-        'department_id',
         'phone_secondary',
         'address',
         'city',
@@ -194,11 +193,20 @@ class User extends Authenticatable implements MustVerifyEmail
     // }
 
     /**
-     * Get user department
+     * Get all departments this user belongs to (many-to-many)
      */
-    public function department()
+    public function departments()
     {
-        return $this->belongsTo(Department::class);
+        return $this->belongsToMany(Department::class, 'department_user')
+                    ->select(['departments.id', 'departments.title']);
+    }
+
+    /**
+     * Get all tasks assigned to this user (many-to-many)
+     */
+    public function tasks()
+    {
+        return $this->belongsToMany(Task::class, 'task_user');
     }
 
     /**

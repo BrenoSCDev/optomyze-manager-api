@@ -19,17 +19,17 @@ class UserController extends Controller
      */
     public function index(): JsonResponse
     {
-        $users = User::with('department')->get();
+        $users       = User::with('departments')->get();
         $departments = Department::withCount('users')->get();
-        $orgDocs = OrgDoc::all();
+        $orgDocs     = OrgDoc::all();
 
         return response()->json([
             'success' => true,
             'meta' => [
-                'total' => $users->count(),
-                'users' => $users,
+                'total'       => $users->count(),
+                'users'       => $users,
                 'departments' => $departments,
-                'org_docs' => $orgDocs,
+                'org_docs'    => $orgDocs,
             ],
         ]);
     }
@@ -41,53 +41,53 @@ class UserController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'nullable|string|max:20',
-            'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:admin,agent',
-            'status' => 'nullable|in:active,inactive,suspended',
-            'title' => 'nullable|string|max:255',
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|string|email|max:255|unique:users',
+            'phone'           => 'nullable|string|max:20',
+            'password'        => 'required|string|min:8|confirmed',
+            'role'            => 'required|in:admin,agent',
+            'status'          => 'nullable|in:active,inactive,suspended',
+            'title'           => 'nullable|string|max:255',
             'phone_secondary' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:2',
-            'start_date' => 'nullable|date',
-            'department_id' => 'nullable|exists:departments,id',
+            'address'         => 'nullable|string',
+            'city'            => 'nullable|string|max:255',
+            'state'           => 'nullable|string|max:255',
+            'country'         => 'nullable|string|max:2',
+            'start_date'      => 'nullable|date',
+            'department_ids'  => 'nullable|array',
+            'department_ids.*'=> 'integer|exists:departments,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Validation error',
-                'errors' => $validator->errors(),
+                'errors'  => $validator->errors(),
             ], 422);
         }
 
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
-            'status' => $request->status ?? 'active',
-            'title' => $request->title,
-            'department_id' => $request->department_id,
-            'department' => $request->department,
+            'name'            => $request->name,
+            'email'           => $request->email,
+            'phone'           => $request->phone,
+            'password'        => Hash::make($request->password),
+            'role'            => $request->role,
+            'status'          => $request->status ?? 'active',
+            'title'           => $request->title,
             'phone_secondary' => $request->phone_secondary,
-            'address' => $request->address,
-            'city' => $request->city,
-            'state' => $request->state,
-            'start_date' => $request->start_date,
+            'address'         => $request->address,
+            'city'            => $request->city,
+            'state'           => $request->state,
+            'start_date'      => $request->start_date,
         ]);
 
-        $user->load('department');
+        $user->departments()->sync($request->input('department_ids', []));
+        $user->load('departments');
 
         return response()->json([
             'success' => true,
             'message' => 'User created successfully',
-            'data' => $user,
+            'data'    => $user,
         ], 201);
     }
 
@@ -108,31 +108,44 @@ class UserController extends Controller
     public function update(Request $request, User $user): JsonResponse
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => ['sometimes', 'required', 'string', 'email', 'max:255'],
-            'phone' => 'nullable|string|max:20',
-            'password' => 'nullable|string|min:8|confirmed',
-            'role' => 'sometimes|required|in:admin,agent',
-            'status' => 'nullable|in:active,inactive,suspended',
-            'title' => 'nullable|string|max:255',
+            'name'            => 'sometimes|required|string|max:255',
+            'email'           => ['sometimes', 'required', 'string', 'email', 'max:255'],
+            'phone'           => 'nullable|string|max:20',
+            'password'        => 'nullable|string|min:8|confirmed',
+            'role'            => 'sometimes|required|in:admin,agent',
+            'status'          => 'nullable|in:active,inactive,suspended',
+            'title'           => 'nullable|string|max:255',
             'phone_secondary' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
-            'city' => 'nullable|string|max:255',
-            'state' => 'nullable|string|max:255',
-            'country' => 'nullable|string|max:2',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date|after:start_date',
-            'department_id' => 'nullable|exists:departments,id'
+            'address'         => 'nullable|string',
+            'city'            => 'nullable|string|max:255',
+            'state'           => 'nullable|string|max:255',
+            'country'         => 'nullable|string|max:2',
+            'start_date'      => 'nullable|date',
+            'end_date'        => 'nullable|date|after:start_date',
+            'department_ids'  => 'nullable|array',
+            'department_ids.*'=> 'integer|exists:departments,id',
         ]);
+
+        // Extract department_ids before updating model attributes
+        $departmentIds = $validated['department_ids'] ?? null;
+        unset($validated['department_ids']);
+
+        if (isset($validated['password'])) {
+            $validated['password'] = Hash::make($validated['password']);
+        }
 
         $user->update($validated);
 
-        $user->load('department');
+        if ($departmentIds !== null) {
+            $user->departments()->sync($departmentIds);
+        }
+
+        $user->load('departments');
 
         return response()->json([
             'success' => true,
-            'message' => 'User updated usccessfully',
-            'data' => $user,
+            'message' => 'User updated successfully',
+            'data'    => $user,
         ]);
     }
 

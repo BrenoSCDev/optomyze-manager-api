@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\CrmCompanyController;
+use App\Http\Controllers\DriveFileController;
+use App\Http\Controllers\DriveFolderController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ClientContractController;
@@ -111,4 +113,27 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/crm/companies/{id}', [CrmCompanyController::class, 'update']);
     Route::delete('/crm/companies/{id}', [CrmCompanyController::class, 'destroy']);
     Route::post('/crm/companies/{id}/restore', [CrmCompanyController::class, 'restore']);
+
+    // ──────────────────────────────────────────
+    // Drive — File Management
+    // ──────────────────────────────────────────
+
+    // Folders
+    Route::get('/drive/folders', [DriveFolderController::class, 'index']);
+    Route::post('/drive/folders', [DriveFolderController::class, 'store']);
+    Route::get('/drive/folders/{folder}', [DriveFolderController::class, 'show']);
+    Route::put('/drive/folders/{folder}', [DriveFolderController::class, 'update']);
+    Route::delete('/drive/folders/{folder}', [DriveFolderController::class, 'destroy']);
+    Route::patch('/drive/folders/{folder}/move', [DriveFolderController::class, 'move']);
+
+    // Files
+    Route::post('/drive/files', [DriveFileController::class, 'store']);
+    Route::get('/drive/files/{file}', [DriveFileController::class, 'show']);
+    Route::delete('/drive/files/{file}', [DriveFileController::class, 'destroy']);
+    Route::patch('/drive/files/{file}/move', [DriveFileController::class, 'move']);
+    Route::get('/drive/files/{file}/url', [DriveFileController::class, 'temporaryUrl']);
+
+    // Download — named route required for signed URL generation
+    Route::get('/drive/files/{file}/download', [DriveFileController::class, 'download'])
+        ->name('drive.files.download');
 });

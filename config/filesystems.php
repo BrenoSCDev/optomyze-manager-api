@@ -17,6 +17,16 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Drive Module Disk
+    |--------------------------------------------------------------------------
+    | Set DRIVE_DISK=s3 in .env to switch Drive storage to S3.
+    | The local disk stores files in storage/app/private (not publicly
+    | accessible), so all downloads must go through the controller.
+    */
+    'drive_disk' => env('DRIVE_DISK', 'local'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |

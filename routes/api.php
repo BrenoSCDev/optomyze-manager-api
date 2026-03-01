@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CrmCompanyController;
 use App\Http\Controllers\DriveFileController;
 use App\Http\Controllers\DriveFolderController;
@@ -113,6 +114,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/crm/companies/{id}', [CrmCompanyController::class, 'update']);
     Route::delete('/crm/companies/{id}', [CrmCompanyController::class, 'destroy']);
     Route::post('/crm/companies/{id}/restore', [CrmCompanyController::class, 'restore']);
+
+    // ──────────────────────────────────────────
+    // Calendar
+    // ──────────────────────────────────────────
+
+    Route::get('/calendar/events',                        [CalendarEventController::class, 'index']);
+    Route::post('/calendar/events',                       [CalendarEventController::class, 'store']);
+    Route::get('/calendar/events/{calendarEvent}',        [CalendarEventController::class, 'show']);
+    Route::put('/calendar/events/{calendarEvent}',        [CalendarEventController::class, 'update']);
+    Route::delete('/calendar/events/{calendarEvent}',     [CalendarEventController::class, 'destroy']);
 
     // ──────────────────────────────────────────
     // Drive — File Management

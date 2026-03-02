@@ -21,7 +21,7 @@ class UserSeeder extends Seeder
                 'name' => 'Breno Castro',
                 'phone' => '(62) 99522-5796',
                 'email_verified_at' => now(),
-                'password' => Hash::make('1234'),
+                'password' => Hash::make('160801Bk@'),
                 'role' => 'admin',
                 'status' => 'active',
                 'avatar' => null,

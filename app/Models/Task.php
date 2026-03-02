@@ -20,7 +20,7 @@ class Task extends Model
 
     public function category()
     {
-        return $this->belongsTo(TaskCategory::class);
+        return $this->belongsTo(TaskCategory::class, 'task_category_id');
     }
 
     public function client()

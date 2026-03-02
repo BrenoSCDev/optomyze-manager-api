@@ -63,7 +63,7 @@ class DataController extends Controller
         $activeProspects = Client::where('status', 'prospect')->count();
 
         // 5. completedTasks (based on TaskCategory.type = 'done')
-        $completedTasks = Task::whereHas('type', function ($q) {
+        $completedTasks = Task::whereHas('category', function ($q) {
             $q->where('type', 'done');
         })->count();
 

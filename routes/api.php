@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\CalendarEventController;
+use App\Http\Controllers\ClientPortalAdminController;
+use App\Http\Controllers\ClientPortalAuthController;
+use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\CrmCompanyController;
 use App\Http\Controllers\CrmUserController;
 use App\Http\Controllers\DriveFileController;
@@ -37,6 +40,27 @@ use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+// ──────────────────────────────────────────
+// Client Portal — Authentication (public, rate-limited)
+// ──────────────────────────────────────────
+Route::post('/portal/{slug}/auth', [ClientPortalAuthController::class, 'authenticate'])
+    ->middleware('throttle:5,1');
+
+// ──────────────────────────────────────────
+// Client Portal — Data (portal token required)
+// ──────────────────────────────────────────
+Route::prefix('portal')->middleware('portal.access')->group(function () {
+    Route::get('/me',                                [ClientPortalController::class, 'me']);
+    Route::get('/tasks',                             [ClientPortalController::class, 'tasks']);
+    Route::get('/payments',                          [ClientPortalController::class, 'payments']);
+    Route::get('/drive',                             [ClientPortalController::class, 'drive']);
+    Route::get('/drive/folders/{id}',                [ClientPortalController::class, 'folder']);
+    Route::get('/drive/files/{id}/preview',          [ClientPortalController::class, 'previewFile']);
+    Route::get('/drive/files/{id}/download',         [ClientPortalController::class, 'downloadFile']);
+    Route::get('/contracts',                         [ClientPortalController::class, 'contracts']);
+    Route::get('/contracts/{id}/download',           [ClientPortalController::class, 'downloadContract']);
+});
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users', [UserController::class, 'index']);
@@ -108,6 +132,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/org-docs', [OrgDocController::class, 'store']);
     Route::delete('/org-docs/{id}', [OrgDocController::class, 'destroy']);
+
+    // ──────────────────────────────────────────
+    // Client Portal — Admin Management
+    // ──────────────────────────────────────────
+    Route::prefix('clients/{client}/portal')->group(function () {
+        Route::get('/',               [ClientPortalAdminController::class, 'status']);
+        Route::post('/enable',        [ClientPortalAdminController::class, 'enable']);
+        Route::post('/disable',       [ClientPortalAdminController::class, 'disable']);
+        Route::post('/regenerate-key',[ClientPortalAdminController::class, 'regenerateKey']);
+        Route::patch('/slug',         [ClientPortalAdminController::class, 'updateSlug']);
+    });
 
     // CRM Companies (proxied to external CRM API)
     Route::get('/crm/companies', [CrmCompanyController::class, 'index']);

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
 
 class Client extends Model
 {
+    use HasApiTokens;
 
     protected $fillable = [
         'company_name',
@@ -41,12 +43,19 @@ class Client extends Model
         'client_tags' => 'array',
         'closed_at',
         'lost_at',
-        'lost_reason'
+        'lost_reason',
+        'portal_slug',
+        'portal_enabled',
+    ];
+
+    protected $hidden = [
+        'portal_key',
     ];
 
     protected $casts = [
-        'value' => 'decimal:2',
-        'crm_active' => 'boolean',
+        'value'          => 'decimal:2',
+        'crm_active'     => 'boolean',
+        'portal_enabled' => 'boolean',
     ];
 
     /*
@@ -121,5 +130,20 @@ class Client extends Model
     public function prospectContacts()
     {
         return $this->hasMany(ProspectContact::class);
+    }
+
+    public function tasks()
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    public function driveFiles()
+    {
+        return $this->hasMany(DriveFile::class);
+    }
+
+    public function driveFolders()
+    {
+        return $this->hasMany(DriveFolder::class);
     }
 }

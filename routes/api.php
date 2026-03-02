@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CalendarEventController;
 use App\Http\Controllers\CrmCompanyController;
+use App\Http\Controllers\CrmUserController;
 use App\Http\Controllers\DriveFileController;
 use App\Http\Controllers\DriveFolderController;
 use App\Http\Controllers\UserController;
@@ -99,6 +100,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/tasks/{task}', [TaskController::class, 'update']);
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
     Route::get('/task-categories/{category}/tasks', [TaskController::class, 'tasksByCategory']);
+    Route::patch('/tasks/{task}/move', [TaskController::class, 'moveCategory']);
     Route::post('/tasks/{task}/tags', [TaskController::class, 'updateTags']);
 
     Route::post('/tasks/docs', [TaskDocController::class, 'store']);
@@ -114,6 +116,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/crm/companies/{id}', [CrmCompanyController::class, 'update']);
     Route::delete('/crm/companies/{id}', [CrmCompanyController::class, 'destroy']);
     Route::post('/crm/companies/{id}/restore', [CrmCompanyController::class, 'restore']);
+
+    // CRM Users (proxied to external CRM API)
+    Route::get('/crm/users', [CrmUserController::class, 'index']);
+    Route::post('/crm/users', [CrmUserController::class, 'store']);
+    Route::get('/crm/users/{id}', [CrmUserController::class, 'show']);
+    Route::put('/crm/users/{id}', [CrmUserController::class, 'update']);
+    Route::patch('/crm/users/{id}/deactivate', [CrmUserController::class, 'deactivate']);
+    Route::delete('/crm/users/{id}', [CrmUserController::class, 'destroy']);
 
     // ──────────────────────────────────────────
     // Calendar
@@ -143,6 +153,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/drive/files/{file}', [DriveFileController::class, 'destroy']);
     Route::patch('/drive/files/{file}/move', [DriveFileController::class, 'move']);
     Route::get('/drive/files/{file}/url', [DriveFileController::class, 'temporaryUrl']);
+    Route::get('/drive/files/{file}/preview', [DriveFileController::class, 'preview']);
 
     // Download — named route required for signed URL generation
     Route::get('/drive/files/{file}/download', [DriveFileController::class, 'download'])

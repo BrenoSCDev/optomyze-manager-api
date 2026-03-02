@@ -204,6 +204,20 @@ class TaskController extends Controller
         ]);
     }
 
+    public function moveCategory(Request $request, Task $task): JsonResponse
+    {
+        $validated = $request->validate([
+            'task_category_id' => 'required|exists:task_categories,id',
+        ]);
+
+        $task->update(['task_category_id' => $validated['task_category_id']]);
+
+        return response()->json([
+            'success' => true,
+            'task'    => $task->fresh(),
+        ]);
+    }
+
     public function tasksByCategory($categoryId): JsonResponse
     {
         $tasks = Task::where('task_category_id', $categoryId)

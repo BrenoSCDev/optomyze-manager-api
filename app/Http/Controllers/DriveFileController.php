@@ -94,6 +94,27 @@ class DriveFileController extends Controller
     }
 
     /**
+     * GET /api/drive/files/{id}/preview
+     *
+     * Stream the file inline so the browser can render it directly (images, PDFs).
+     * Uses Content-Disposition: inline instead of attachment — no forced download.
+     */
+    public function preview(DriveFile $file): StreamedResponse
+    {
+        $this->authorize('download', $file);
+
+        if (! Storage::disk($file->disk)->exists($file->stored_name)) {
+            abort(404, 'File not found on storage.');
+        }
+
+        return Storage::disk($file->disk)->response(
+            $file->stored_name,
+            $file->original_name,
+            ['Content-Type' => $file->mime_type]
+        );
+    }
+
+    /**
      * DELETE /api/drive/files/{id}
      *
      * Remove the file from storage and delete the database record.

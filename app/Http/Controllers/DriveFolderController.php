@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Drive\MoveFolderRequest;
 use App\Http\Requests\Drive\StoreFolderRequest;
 use App\Http\Requests\Drive\UpdateFolderRequest;
+use App\Models\DriveFile;
 use App\Models\DriveFolder;
 use App\Services\DriveService;
 use Illuminate\Http\JsonResponse;
@@ -45,9 +46,23 @@ class DriveFolderController extends Controller
 
         $folders = $query->orderBy('name')->get();
 
+        // Include loose files (no folder) only when listing the root level
+        $looseFiles = null;
+        if (!$request->filled('parent_id')) {
+            $filesQuery = DriveFile::with('uploader:id,name')
+                ->whereNull('folder_id');
+
+            if ($request->filled('client_id')) {
+                $filesQuery->where('client_id', $request->integer('client_id'));
+            }
+
+            $looseFiles = $filesQuery->orderBy('original_name')->get();
+        }
+
         return response()->json([
-            'success' => true,
-            'data'    => $folders,
+            'success'     => true,
+            'data'        => $folders,
+            'loose_files' => $looseFiles,
         ]);
     }
 

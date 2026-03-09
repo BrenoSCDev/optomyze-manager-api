@@ -119,7 +119,7 @@ class TaskController extends Controller
                         'phone' => $assignee->phone,
                     ],
                     'message'  => sprintf(
-                        'Uma nova tarefa foi atribuída a você no Optomyze Manager: "%s". Acesse https://manager.optomyze.io para visualizar os detalhes.',
+                        'Uma nova tarefa foi atribuída a você no Optomyze Manager: "%s". Acesse https://manager.optomyze.io/tasks para visualizar os detalhes.',
                         $task->title
                     ),
                 ]
@@ -182,7 +182,7 @@ class TaskController extends Controller
                         'phone' => $assignee->phone,
                     ],
                     'message'  => sprintf(
-                        'Sua tarefa foi atualizada no Optomyze Manager: "%s". Acesse https://manager.optomyze.io para visualizar os detalhes.',
+                        'Sua tarefa foi atualizada no Optomyze Manager: "%s". Acesse https://manager.optomyze.io/tasks para visualizar os detalhes.',
                         $task->title
                     ),
                 ]

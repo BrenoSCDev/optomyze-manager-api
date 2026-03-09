@@ -31,7 +31,7 @@ class Task extends Model
     public function assignees()
     {
         return $this->belongsToMany(User::class, 'task_user')
-                    ->select(['users.id', 'users.name', 'users.email', 'users.avatar', 'users.title']);
+                    ->select(['users.id', 'users.name', 'users.email', 'users.avatar', 'users.title', 'users.phone']);
     }
 
     public function docs()

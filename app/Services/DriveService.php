@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\DriveFile;
 use App\Models\DriveFolder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use ZipArchive;
 
 class DriveService
 {
@@ -61,6 +63,90 @@ class DriveService
             'size'          => $upload->getSize(),
             'uploaded_by'   => $uploadedBy,
         ]);
+    }
+
+    /**
+     * Store multiple uploaded files and return the created DriveFile records.
+     *
+     * @param  UploadedFile[]  $uploads
+     * @return DriveFile[]
+     */
+    public function bulkStoreFiles(
+        array   $uploads,
+        ?int    $folderId,
+        ?int    $companyId,
+        ?int    $clientId,
+        int     $uploadedBy
+    ): array {
+        $files = [];
+
+        foreach ($uploads as $upload) {
+            $files[] = $this->storeFile($upload, $folderId, $companyId, $clientId, $uploadedBy);
+        }
+
+        return $files;
+    }
+
+    /**
+     * Delete multiple files inside a single transaction.
+     */
+    public function bulkDeleteFiles(Collection $files): void
+    {
+        DB::transaction(function () use ($files) {
+            $files->each(fn (DriveFile $file) => $this->deleteFile($file));
+        });
+    }
+
+    /**
+     * Build a temporary ZIP archive containing all supplied files and return
+     * the path to the archive so the caller can stream it.
+     *
+     * The caller is responsible for deleting the temp file after the response
+     * is sent (use ->deleteFileAfterSend(true) on the download response).
+     *
+     * Duplicate original filenames are disambiguated with a numeric suffix:
+     *   report.pdf, report (1).pdf, report (2).pdf …
+     *
+     * Files that no longer exist on disk are silently skipped.
+     *
+     * @throws \RuntimeException if ZipArchive cannot create the archive.
+     */
+    public function bulkDownloadZip(Collection $files): string
+    {
+        $tmpPath = tempnam(sys_get_temp_dir(), 'drive_bulk_') . '.zip';
+
+        $zip = new ZipArchive();
+
+        if ($zip->open($tmpPath, ZipArchive::CREATE) !== true) {
+            throw new \RuntimeException('Could not create ZIP archive.');
+        }
+
+        $nameCount = [];
+
+        foreach ($files as $file) {
+            if (! Storage::disk($file->disk)->exists($file->stored_name)) {
+                continue;
+            }
+
+            // Disambiguate duplicate filenames inside the archive
+            $name = $file->original_name;
+            if (array_key_exists($name, $nameCount)) {
+                $nameCount[$name]++;
+                $ext   = pathinfo($name, PATHINFO_EXTENSION);
+                $base  = pathinfo($name, PATHINFO_FILENAME);
+                $name  = $ext
+                    ? "{$base} ({$nameCount[$file->original_name]}).{$ext}"
+                    : "{$base} ({$nameCount[$file->original_name]})";
+            } else {
+                $nameCount[$name] = 0;
+            }
+
+            $zip->addFromString($name, Storage::disk($file->disk)->get($file->stored_name));
+        }
+
+        $zip->close();
+
+        return $tmpPath;
     }
 
     /**

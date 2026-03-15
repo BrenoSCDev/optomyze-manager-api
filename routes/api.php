@@ -182,7 +182,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/drive/folders/{folder}', [DriveFolderController::class, 'destroy']);
     Route::patch('/drive/folders/{folder}/move', [DriveFolderController::class, 'move']);
 
-    // Files
+    // Files — bulk routes must be declared before /{file} to avoid route-model binding conflicts
+    Route::post('/drive/files/bulk', [DriveFileController::class, 'bulkStore']);
+    Route::delete('/drive/files/bulk', [DriveFileController::class, 'bulkDestroy']);
+    Route::post('/drive/files/bulk/download', [DriveFileController::class, 'bulkDownload']);
+
     Route::post('/drive/files', [DriveFileController::class, 'store']);
     Route::get('/drive/files/{file}', [DriveFileController::class, 'show']);
     Route::delete('/drive/files/{file}', [DriveFileController::class, 'destroy']);

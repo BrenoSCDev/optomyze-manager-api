@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Drive\BulkDestroyFileRequest;
+use App\Http\Requests\Drive\BulkDownloadFileRequest;
+use App\Http\Requests\Drive\BulkStoreFileRequest;
 use App\Http\Requests\Drive\MoveFileRequest;
 use App\Http\Requests\Drive\StoreFileRequest;
 use App\Models\DriveFile;
@@ -9,6 +12,7 @@ use App\Models\DriveFolder;
 use App\Services\DriveService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DriveFileController extends Controller
@@ -49,6 +53,91 @@ class DriveFileController extends Controller
             'message' => 'File uploaded successfully.',
             'data'    => $file,
         ], 201);
+    }
+
+    // ============================================================
+    // BULK OPERATIONS
+    // ============================================================
+
+    /**
+     * POST /api/drive/files/bulk
+     *
+     * Upload multiple files in one request.
+     * All files land in the same optional folder / client scope.
+     * Maximum 20 files per request (enforced by BulkStoreFileRequest).
+     */
+    public function bulkStore(BulkStoreFileRequest $request): JsonResponse
+    {
+        $this->authorize('create', DriveFile::class);
+
+        $stored = $this->driveService->bulkStoreFiles(
+            uploads:    $request->file('files'),
+            folderId:   $request->input('folder_id'),
+            companyId:  null,
+            clientId:   $request->input('client_id'),
+            uploadedBy: $request->user()->id,
+        );
+
+        $collection = collect($stored)->each(function (DriveFile $file) {
+            $file->load(['folder:id,name', 'uploader:id,name', 'client:id,company_name']);
+            $file->append('human_size');
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => count($stored) . ' file(s) uploaded successfully.',
+            'data'    => $collection,
+        ], 201);
+    }
+
+    /**
+     * DELETE /api/drive/files/bulk
+     *
+     * Delete multiple files at once.
+     * Each file is authorised individually; if any check fails the entire
+     * request is rejected before any deletion occurs.
+     *
+     * Body: { "file_ids": [1, 2, 3] }
+     */
+    public function bulkDestroy(BulkDestroyFileRequest $request): JsonResponse
+    {
+        $files = DriveFile::whereIn('id', $request->input('file_ids'))->get();
+
+        // Authorise every file before touching anything
+        foreach ($files as $file) {
+            $this->authorize('delete', $file);
+        }
+
+        $this->driveService->bulkDeleteFiles($files);
+
+        return response()->json([
+            'success' => true,
+            'message' => $files->count() . ' file(s) deleted successfully.',
+        ]);
+    }
+
+    /**
+     * POST /api/drive/files/bulk/download
+     *
+     * Stream a ZIP archive containing the requested files.
+     * Each file is authorised individually before the archive is built.
+     * Files missing from disk are silently excluded from the archive.
+     *
+     * Body: { "file_ids": [1, 2, 3] }
+     */
+    public function bulkDownload(BulkDownloadFileRequest $request): BinaryFileResponse
+    {
+        $files = DriveFile::whereIn('id', $request->input('file_ids'))->get();
+
+        foreach ($files as $file) {
+            $this->authorize('download', $file);
+        }
+
+        $zipPath = $this->driveService->bulkDownloadZip($files);
+
+        return response()
+            ->download($zipPath, 'files.zip', ['Content-Type' => 'application/zip'])
+            ->deleteFileAfterSend(true);
     }
 
     /**

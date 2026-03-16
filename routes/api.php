@@ -6,6 +6,8 @@ use App\Http\Controllers\ClientPortalAuthController;
 use App\Http\Controllers\ClientPortalController;
 use App\Http\Controllers\CrmCompanyController;
 use App\Http\Controllers\CrmUserController;
+use App\Http\Controllers\DocFolderController;
+use App\Http\Controllers\DocPageController;
 use App\Http\Controllers\DriveFileController;
 use App\Http\Controllers\DriveFolderController;
 use App\Http\Controllers\UserController;
@@ -197,4 +199,31 @@ Route::middleware('auth:sanctum')->group(function () {
     // Download — named route required for signed URL generation
     Route::get('/drive/files/{file}/download', [DriveFileController::class, 'download'])
         ->name('drive.files.download');
+
+    // ----------------------------------------------------------------
+    // Docs (Notion-like)
+    // ----------------------------------------------------------------
+
+    // Discovery — static segments must be declared before /{page} wildcard
+    Route::get('/docs/tree',                              [DocPageController::class, 'tree']);
+    Route::get('/docs/search',                            [DocPageController::class, 'search']);
+    Route::get('/docs/favorites',                         [DocPageController::class, 'favorites']);
+    Route::get('/docs/archive',                           [DocPageController::class, 'archived']);
+
+    // Folders
+    Route::get('/docs/folders',                           [DocFolderController::class, 'index']);
+    Route::post('/docs/folders',                          [DocFolderController::class, 'store']);
+    Route::put('/docs/folders/{folder}',                  [DocFolderController::class, 'update']);
+    Route::delete('/docs/folders/{folder}',               [DocFolderController::class, 'destroy']);
+    Route::patch('/docs/folders/{folder}/move',           [DocFolderController::class, 'move']);
+
+    // Pages
+    Route::post('/docs/pages',                            [DocPageController::class, 'store']);
+    Route::get('/docs/pages/{page}',                      [DocPageController::class, 'show']);
+    Route::put('/docs/pages/{page}',                      [DocPageController::class, 'update']);
+    Route::delete('/docs/pages/{page}',                   [DocPageController::class, 'destroy']);
+    Route::patch('/docs/pages/{page}/move',               [DocPageController::class, 'move']);
+    Route::patch('/docs/pages/{page}/archive',            [DocPageController::class, 'archive']);
+    Route::patch('/docs/pages/{page}/restore',            [DocPageController::class, 'restore']);
+    Route::patch('/docs/pages/{page}/favorite',           [DocPageController::class, 'toggleFavorite']);
 });

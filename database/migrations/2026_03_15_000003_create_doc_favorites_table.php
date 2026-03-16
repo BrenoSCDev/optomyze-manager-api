@@ -1,0 +1,23 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('doc_favorites', function (Blueprint $table) {
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('page_id')->constrained('doc_pages')->cascadeOnDelete();
+            $table->primary(['user_id', 'page_id']);
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('doc_favorites');
+    }
+};

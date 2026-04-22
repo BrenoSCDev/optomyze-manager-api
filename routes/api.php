@@ -130,6 +130,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tasks/{task}/tags', [TaskController::class, 'updateTags']);
 
     Route::post('/tasks/docs', [TaskDocController::class, 'store']);
+    Route::get('/tasks/docs/{id}/download', [TaskDocController::class, 'download']);
     Route::delete('/tasks/docs/{id}', [TaskDocController::class, 'destroy']);
 
     Route::post('/org-docs', [OrgDocController::class, 'store']);

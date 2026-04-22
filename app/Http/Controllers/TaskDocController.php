@@ -6,6 +6,7 @@ use App\Models\TaskDoc;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class TaskDocController extends Controller
 {
@@ -36,6 +37,30 @@ class TaskDocController extends Controller
             'message' => 'Document uploaded successfully.',
             'doc'     => $doc
         ], 201);
+    }
+
+    /**
+     * Download a task document.
+     */
+    public function download($id): StreamedResponse|JsonResponse
+    {
+        $doc = TaskDoc::find($id);
+
+        if (!$doc) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Document not found.'
+            ], 404);
+        }
+
+        if (!Storage::disk('public')->exists($doc->path)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File not found on storage.'
+            ], 404);
+        }
+
+        return Storage::disk('public')->download($doc->path, $doc->name);
     }
 
     /**

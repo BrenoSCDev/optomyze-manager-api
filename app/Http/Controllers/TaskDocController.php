@@ -23,7 +23,7 @@ class TaskDocController extends Controller
         ]);
 
         // Store the file (storage/app/task_docs/)
-        $path = $request->file('file')->store('task_docs', 'public');
+        $path = $request->file('file')->store('task_docs', 'local');
 
         // Create record
         $doc = TaskDoc::create([
@@ -40,9 +40,29 @@ class TaskDocController extends Controller
     }
 
     /**
+     * Preview a task document inline.
+     */
+    public function preview(int $id): StreamedResponse|JsonResponse
+    {
+        $doc = TaskDoc::find($id);
+
+        if (!$doc) {
+            return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+        }
+
+        if (!Storage::disk('local')->exists($doc->path)) {
+            return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
+        }
+
+        return Storage::disk('local')->response($doc->path, $doc->name, [
+            'Content-Type' => Storage::disk('local')->mimeType($doc->path),
+        ]);
+    }
+
+    /**
      * Download a task document.
      */
-    public function download($id): StreamedResponse|JsonResponse
+    public function download(int $id): StreamedResponse|JsonResponse
     {
         $doc = TaskDoc::find($id);
 
@@ -53,14 +73,14 @@ class TaskDocController extends Controller
             ], 404);
         }
 
-        if (!Storage::disk('public')->exists($doc->path)) {
+        if (!Storage::disk('local')->exists($doc->path)) {
             return response()->json([
                 'success' => false,
                 'message' => 'File not found on storage.'
             ], 404);
         }
 
-        return Storage::disk('public')->download($doc->path, $doc->name);
+        return Storage::disk('local')->download($doc->path, $doc->name);
     }
 
     /**
@@ -78,8 +98,8 @@ class TaskDocController extends Controller
         }
 
         // Delete file from storage
-        if ($doc->path && Storage::exists($doc->path)) {
-            Storage::delete($doc->path);
+        if ($doc->path && Storage::disk('local')->exists($doc->path)) {
+            Storage::disk('local')->delete($doc->path);
         }
 
         // Delete database record

@@ -40,7 +40,7 @@ class ClientPaymentController extends Controller
         $filePath = null;
 
         if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('payment_comprovements', 'public');
+            $filePath = $request->file('file')->store('payment_comprovements', 'local');
         }
 
         $payment = ClientPayment::create([
@@ -80,11 +80,11 @@ class ClientPaymentController extends Controller
 
         if ($request->hasFile('file')) {
             // Delete old file
-            if ($payment->transaction_file && Storage::exists($payment->transaction_file)) {
-                Storage::delete($payment->transaction_file);
+            if ($payment->transaction_file && Storage::disk('local')->exists($payment->transaction_file)) {
+                Storage::disk('local')->delete($payment->transaction_file);
             }
 
-            $payment->transaction_file = $request->file('file')->store('payment_comprovements', 'public');
+            $payment->transaction_file = $request->file('file')->store('payment_comprovements', 'local');
         }
 
         $payment->update($validated);
@@ -107,7 +107,7 @@ class ClientPaymentController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($payment->transaction_file)) {
             return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
@@ -132,7 +132,7 @@ class ClientPaymentController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($payment->transaction_file)) {
             return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
@@ -155,8 +155,8 @@ class ClientPaymentController extends Controller
             ], 404);
         }
 
-        if ($payment->transaction_file && Storage::exists($payment->transaction_file)) {
-            Storage::delete($payment->transaction_file);
+        if ($payment->transaction_file && Storage::disk('local')->exists($payment->transaction_file)) {
+            Storage::disk('local')->delete($payment->transaction_file);
         }
 
         $payment->delete();

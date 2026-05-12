@@ -24,7 +24,7 @@ class ClientContractController extends Controller
         ]);
 
         // Store the file (storage/app/contracts/)
-        $path = $request->file('file')->store('contracts', 'public');
+        $path = $request->file('file')->store('contracts', 'local');
 
         // Create record
         $contract = ClientContract::create([
@@ -52,7 +52,7 @@ class ClientContractController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($contract->path)) {
             return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
@@ -77,7 +77,7 @@ class ClientContractController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($contract->path)) {
             return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
@@ -101,8 +101,8 @@ class ClientContractController extends Controller
         }
 
         // Delete file from storage
-        if ($contract->path && Storage::exists($contract->path)) {
-            Storage::delete($contract->path);
+        if ($contract->path && Storage::disk('local')->exists($contract->path)) {
+            Storage::disk('local')->delete($contract->path);
         }
 
         // Delete database record

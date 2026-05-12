@@ -237,18 +237,9 @@ class ClientPortalController extends Controller
     {
         $client = $this->client($request);
 
-        /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
-
         $contracts = $client->contracts()
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(fn ($contract) => [
-                'id'         => $contract->id,
-                'name'       => $contract->name,
-                'url'        => $disk->url($contract->path),
-                'created_at' => $contract->created_at,
-            ]);
+            ->get(['id', 'name', 'created_at']);
 
         return response()->json(['success' => true, 'data' => $contracts]);
     }
@@ -285,7 +276,7 @@ class ClientPortalController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($payment->transaction_file)) {
             return response()->json(['success' => false, 'message' => 'File not found.'], 404);
@@ -314,7 +305,7 @@ class ClientPortalController extends Controller
         }
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($payment->transaction_file)) {
             return response()->json(['success' => false, 'message' => 'File not found.'], 404);
@@ -337,7 +328,7 @@ class ClientPortalController extends Controller
             ->firstOrFail();
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($contract->path)) {
             return response()->json(['success' => false, 'message' => 'File not found.'], 404);
@@ -364,7 +355,7 @@ class ClientPortalController extends Controller
             ->firstOrFail();
 
         /** @var FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('local');
 
         if (!$disk->exists($contract->path)) {
             return response()->json(['success' => false, 'message' => 'File not found.'], 404);

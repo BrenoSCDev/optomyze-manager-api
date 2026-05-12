@@ -6,6 +6,8 @@ use App\Models\ClientContract;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientContractController extends Controller
 {
@@ -36,6 +38,52 @@ class ClientContractController extends Controller
             'message' => 'Contract uploaded successfully.',
             'contract' => $contract
         ], 201);
+    }
+
+    /**
+     * Preview a client contract inline (PDF / image).
+     */
+    public function preview(int $id): StreamedResponse|JsonResponse
+    {
+        $contract = ClientContract::find($id);
+
+        if (!$contract) {
+            return response()->json(['success' => false, 'message' => 'Contract not found.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($contract->path)) {
+            return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
+        }
+
+        return $disk->response(
+            $contract->path,
+            $contract->name,
+            ['Content-Type' => $disk->mimeType($contract->path)]
+        );
+    }
+
+    /**
+     * Download a client contract.
+     */
+    public function download(int $id): StreamedResponse|JsonResponse
+    {
+        $contract = ClientContract::find($id);
+
+        if (!$contract) {
+            return response()->json(['success' => false, 'message' => 'Contract not found.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($contract->path)) {
+            return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
+        }
+
+        return $disk->download($contract->path, $contract->name);
     }
 
     /**

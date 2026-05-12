@@ -55,12 +55,17 @@ Route::post('/portal/{slug}/auth', [ClientPortalAuthController::class, 'authenti
 Route::prefix('portal')->middleware('portal.access')->group(function () {
     Route::get('/me',                                [ClientPortalController::class, 'me']);
     Route::get('/tasks',                             [ClientPortalController::class, 'tasks']);
+    Route::get('/events',                            [ClientPortalController::class, 'events']);
     Route::get('/payments',                          [ClientPortalController::class, 'payments']);
     Route::get('/drive',                             [ClientPortalController::class, 'drive']);
     Route::get('/drive/folders/{id}',                [ClientPortalController::class, 'folder']);
+    Route::post('/drive/files/bulk/download',        [ClientPortalController::class, 'bulkDownloadFiles']);
     Route::get('/drive/files/{id}/preview',          [ClientPortalController::class, 'previewFile']);
     Route::get('/drive/files/{id}/download',         [ClientPortalController::class, 'downloadFile']);
+    Route::get('/payments/{id}/file/preview',         [ClientPortalController::class, 'previewPaymentFile']);
+    Route::get('/payments/{id}/file/download',        [ClientPortalController::class, 'downloadPaymentFile']);
     Route::get('/contracts',                         [ClientPortalController::class, 'contracts']);
+    Route::get('/contracts/{id}/preview',            [ClientPortalController::class, 'previewContract']);
     Route::get('/contracts/{id}/download',           [ClientPortalController::class, 'downloadContract']);
 });
 
@@ -91,11 +96,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/prospects/import', [ClientController::class, 'importProspects']);
 
     Route::post('/client-contracts', [ClientContractController::class, 'store']);
+    Route::get('/client-contracts/{id}/preview', [ClientContractController::class, 'preview']);
+    Route::get('/client-contracts/{id}/download', [ClientContractController::class, 'download']);
     Route::delete('/client-contracts/{id}', [ClientContractController::class, 'destroy']);
 
     Route::get('/clients/{clientId}/payments', [ClientPaymentController::class, 'index']);
     Route::post('/client-payments', [ClientPaymentController::class, 'store']);
     Route::put('/client-payments/{id}', [ClientPaymentController::class, 'update']);
+    Route::get('/client-payments/{id}/file/preview', [ClientPaymentController::class, 'previewFile']);
+    Route::get('/client-payments/{id}/file/download', [ClientPaymentController::class, 'downloadFile']);
     Route::delete('/client-payments/{id}', [ClientPaymentController::class, 'destroy']);
 
     Route::get('/task-categories', [TaskCategoryController::class, 'index']);

@@ -20,7 +20,7 @@ class CalendarEventController extends Controller
         $from = $request->get('from', now()->startOfMonth()->toDateTimeString());
         $to   = $request->get('to',   now()->endOfMonth()->toDateTimeString());
 
-        $events = CalendarEvent::with(['users', 'creator:id,name,avatar'])
+        $events = CalendarEvent::with(['users', 'creator:id,name,avatar', 'client:id,company_name'])
             ->inRange($from, $to)
             ->orderBy('start_datetime')
             ->get();
@@ -61,6 +61,7 @@ class CalendarEventController extends Controller
             'recurrence_ends_on'  => 'nullable|date|after:start_datetime',
             'user_ids'            => 'nullable|array',
             'user_ids.*'          => 'integer|exists:users,id',
+            'client_id'           => 'nullable|integer|exists:clients,id',
         ]);
 
         $event = CalendarEvent::create([
@@ -74,10 +75,11 @@ class CalendarEventController extends Controller
             'recurrence'          => $validated['recurrence'] ?? null,
             'recurrence_ends_on'  => $validated['recurrence_ends_on'] ?? null,
             'created_by'          => $request->user()->id,
+            'client_id'           => $validated['client_id'] ?? null,
         ]);
 
         $event->users()->sync($validated['user_ids'] ?? []);
-        $event->load(['users', 'creator:id,name,avatar']);
+        $event->load(['users', 'creator:id,name,avatar', 'client:id,company_name']);
 
         return response()->json([
             'success' => true,
@@ -91,7 +93,7 @@ class CalendarEventController extends Controller
      */
     public function show(CalendarEvent $calendarEvent): JsonResponse
     {
-        $calendarEvent->load(['users', 'creator:id,name,avatar']);
+        $calendarEvent->load(['users', 'creator:id,name,avatar', 'client:id,company_name']);
 
         return response()->json([
             'success' => true,
@@ -116,6 +118,7 @@ class CalendarEventController extends Controller
             'recurrence_ends_on'  => 'nullable|date|after:start_datetime',
             'user_ids'            => 'nullable|array',
             'user_ids.*'          => 'integer|exists:users,id',
+            'client_id'           => 'nullable|integer|exists:clients,id',
         ]);
 
         $calendarEvent->update([
@@ -128,10 +131,11 @@ class CalendarEventController extends Controller
             'color'               => $validated['color'] ?? $calendarEvent->color,
             'recurrence'          => $validated['recurrence'] ?? null,
             'recurrence_ends_on'  => $validated['recurrence_ends_on'] ?? null,
+            'client_id'           => $validated['client_id'] ?? null,
         ]);
 
         $calendarEvent->users()->sync($validated['user_ids'] ?? []);
-        $calendarEvent->load(['users', 'creator:id,name,avatar']);
+        $calendarEvent->load(['users', 'creator:id,name,avatar', 'client:id,company_name']);
 
         return response()->json([
             'success' => true,

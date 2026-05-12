@@ -64,6 +64,8 @@ class CrmCompanyController extends Controller
                 'phone'             => 'nullable|string|max:50',
                 'website'           => 'nullable|string|max:255',
                 'product_module'    => 'nullable|in:product,ERP',
+                'timezone'          => 'nullable|string|timezone',
+                'currency'          => 'nullable|string|in:USD,BRL,CAD,EUR,GBP',
                 'settings'          => 'nullable|array',
             ]);
 
@@ -101,6 +103,8 @@ class CrmCompanyController extends Controller
                 'website'           => 'nullable|string|max:255',
                 'product_module'    => 'nullable|in:product,ERP',
                 'is_active'         => 'sometimes|boolean',
+                'timezone'          => 'nullable|string|timezone',
+                'currency'          => 'nullable|string|in:USD,BRL,CAD,EUR,GBP',
                 'settings'          => 'nullable|array',
             ]);
 

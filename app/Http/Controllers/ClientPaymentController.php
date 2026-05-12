@@ -6,6 +6,8 @@ use App\Models\ClientPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Filesystem\FilesystemAdapter;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClientPaymentController extends Controller
 {
@@ -91,6 +93,52 @@ class ClientPaymentController extends Controller
             'success' => true,
             'payment' => $payment
         ]);
+    }
+
+    /**
+     * Preview the transaction file inline.
+     */
+    public function previewFile(int $id): StreamedResponse|JsonResponse
+    {
+        $payment = ClientPayment::find($id);
+
+        if (!$payment || !$payment->transaction_file) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($payment->transaction_file)) {
+            return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
+        }
+
+        return $disk->response(
+            $payment->transaction_file,
+            basename($payment->transaction_file),
+            ['Content-Type' => $disk->mimeType($payment->transaction_file)]
+        );
+    }
+
+    /**
+     * Download the transaction file.
+     */
+    public function downloadFile(int $id): StreamedResponse|JsonResponse
+    {
+        $payment = ClientPayment::find($id);
+
+        if (!$payment || !$payment->transaction_file) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($payment->transaction_file)) {
+            return response()->json(['success' => false, 'message' => 'File not found on storage.'], 404);
+        }
+
+        return $disk->download($payment->transaction_file, basename($payment->transaction_file));
     }
 
     /**

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\ClientContract;
 use App\Models\DriveFile;
 use App\Models\DriveFolder;
+use App\Services\DriveService;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -147,7 +149,10 @@ class ClientPortalController extends Controller
         $client = $this->client($request);
 
         $file = DriveFile::where('id', $id)
-            ->where('client_id', $client->id)
+            ->where(function ($q) use ($client) {
+                $q->where('client_id', $client->id)
+                  ->orWhereHas('folder', fn($fq) => $fq->where('client_id', $client->id));
+            })
             ->firstOrFail();
 
         /** @var FilesystemAdapter $disk */
@@ -174,7 +179,10 @@ class ClientPortalController extends Controller
         $client = $this->client($request);
 
         $file = DriveFile::where('id', $id)
-            ->where('client_id', $client->id)
+            ->where(function ($q) use ($client) {
+                $q->where('client_id', $client->id)
+                  ->orWhereHas('folder', fn($fq) => $fq->where('client_id', $client->id));
+            })
             ->firstOrFail();
 
         /** @var FilesystemAdapter $disk */
@@ -189,6 +197,35 @@ class ClientPortalController extends Controller
             $file->original_name,
             ['Content-Type' => $file->mime_type]
         );
+    }
+
+    /**
+     * POST /api/portal/drive/files/bulk/download
+     *
+     * Download multiple files as a zip — all verified to belong to this client.
+     */
+    public function bulkDownloadFiles(Request $request): BinaryFileResponse|JsonResponse
+    {
+        $client = $this->client($request);
+
+        $fileIds = $request->input('file_ids', []);
+
+        $files = DriveFile::whereIn('id', $fileIds)
+            ->where(function ($q) use ($client) {
+                $q->where('client_id', $client->id)
+                  ->orWhereHas('folder', fn($fq) => $fq->where('client_id', $client->id));
+            })
+            ->get();
+
+        if ($files->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No accessible files found.'], 404);
+        }
+
+        $zipPath = app(DriveService::class)->bulkDownloadZip($files);
+
+        return response()
+            ->download($zipPath, 'files.zip', ['Content-Type' => 'application/zip'])
+            ->deleteFileAfterSend(true);
     }
 
     /**
@@ -214,6 +251,103 @@ class ClientPortalController extends Controller
             ]);
 
         return response()->json(['success' => true, 'data' => $contracts]);
+    }
+
+    /**
+     * GET /api/portal/events
+     *
+     * Calendar events linked to this client.
+     */
+    public function events(Request $request): JsonResponse
+    {
+        $client = $this->client($request);
+
+        $events = \App\Models\CalendarEvent::where('client_id', $client->id)
+            ->orderBy('start_datetime')
+            ->get(['id', 'title', 'description', 'location', 'start_datetime', 'end_datetime', 'is_all_day', 'color']);
+
+        return response()->json(['success' => true, 'data' => $events]);
+    }
+
+    /**
+     * GET /api/portal/payments/{id}/file/preview
+     *
+     * Stream a payment transaction file inline — verified to belong to this client.
+     */
+    public function previewPaymentFile(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        $client = $this->client($request);
+
+        $payment = $client->payments()->findOrFail($id);
+
+        if (!$payment->transaction_file) {
+            return response()->json(['success' => false, 'message' => 'No file attached to this payment.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($payment->transaction_file)) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        return $disk->response(
+            $payment->transaction_file,
+            basename($payment->transaction_file),
+            ['Content-Type' => $disk->mimeType($payment->transaction_file)]
+        );
+    }
+
+    /**
+     * GET /api/portal/payments/{id}/file/download
+     *
+     * Force-download a payment transaction file — verified to belong to this client.
+     */
+    public function downloadPaymentFile(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        $client = $this->client($request);
+
+        $payment = $client->payments()->findOrFail($id);
+
+        if (!$payment->transaction_file) {
+            return response()->json(['success' => false, 'message' => 'No file attached to this payment.'], 404);
+        }
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($payment->transaction_file)) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        return $disk->download($payment->transaction_file, basename($payment->transaction_file));
+    }
+
+    /**
+     * GET /api/portal/contracts/{id}/preview
+     *
+     * Stream a contract inline (for PDF / image preview) — verified to belong to this client.
+     */
+    public function previewContract(Request $request, int $id): StreamedResponse|JsonResponse
+    {
+        $client = $this->client($request);
+
+        $contract = ClientContract::where('id', $id)
+            ->where('client_id', $client->id)
+            ->firstOrFail();
+
+        /** @var FilesystemAdapter $disk */
+        $disk = Storage::disk('public');
+
+        if (!$disk->exists($contract->path)) {
+            return response()->json(['success' => false, 'message' => 'File not found.'], 404);
+        }
+
+        return $disk->response(
+            $contract->path,
+            $contract->name,
+            ['Content-Type' => $disk->mimeType($contract->path)]
+        );
     }
 
     /**

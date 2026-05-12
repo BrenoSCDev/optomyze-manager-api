@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Client;
 
 class CalendarEvent extends Model
 {
@@ -22,6 +23,7 @@ class CalendarEvent extends Model
         'recurrence',
         'recurrence_ends_on',
         'created_by',
+        'client_id',
     ];
 
     protected $casts = [
@@ -34,6 +36,11 @@ class CalendarEvent extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Client::class);
     }
 
     public function users(): BelongsToMany

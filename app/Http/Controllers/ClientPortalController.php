@@ -53,17 +53,18 @@ class ClientPortalController extends Controller
         $client = $this->client($request);
 
         $tasks = $client->tasks()
-            ->with(['category:id,name', 'assignees:id,name,avatar'])
+            ->with(['category:id,name,type', 'assignees:id,name,avatar'])
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(fn ($task) => [
-                'id'          => $task->id,
-                'title'       => $task->title,
-                'description' => $task->description,
-                'priority'    => $task->priority,
-                'due_date'    => $task->due_date,
-                'category'    => $task->category?->name,
-                'assignees'   => $task->assignees->map(fn ($u) => [
+                'id'            => $task->id,
+                'title'         => $task->title,
+                'description'   => $task->description,
+                'priority'      => $task->priority,
+                'due_date'      => $task->due_date,
+                'category'      => $task->category?->name,
+                'category_type' => $task->category?->type,
+                'assignees'     => $task->assignees->map(fn ($u) => [
                     'name'   => $u->name,
                     'avatar' => $u->avatar,
                 ]),

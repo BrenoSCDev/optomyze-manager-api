@@ -136,6 +136,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy']);
     Route::get('/task-categories/{category}/tasks', [TaskController::class, 'tasksByCategory']);
     Route::patch('/tasks/{task}/move', [TaskController::class, 'moveCategory']);
+    Route::patch('/tasks/{task}/archive', [TaskController::class, 'archive']);
+    Route::patch('/tasks/{task}/unarchive', [TaskController::class, 'unarchive']);
+    Route::patch('/task-categories/{category}/archive', [TaskController::class, 'archiveCategory']);
+    Route::patch('/task-categories/{category}/unarchive', [TaskController::class, 'unarchiveCategory']);
     Route::post('/tasks/{task}/tags', [TaskController::class, 'updateTags']);
 
     Route::post('/tasks/docs', [TaskDocController::class, 'store']);

@@ -19,11 +19,20 @@ class TaskController extends Controller
         return response()->json($tasks);
     }
 
-    public function tasksGroupedByCategory(): JsonResponse
+    public function tasksGroupedByCategory(Request $request): JsonResponse
     {
+        // archived filter: 'active' (default) | 'archived' | 'all'
+        $archived = $request->query('archived', 'active');
+
         $categories = TaskCategory::with([
-            'tasks' => function ($query) {
+            'tasks' => function ($query) use ($archived) {
                 $query->with(['client', 'assignees', 'docs']);
+
+                if ($archived === 'archived') {
+                    $query->archived();
+                } elseif ($archived !== 'all') {
+                    $query->notArchived();
+                }
             }
         ])->get();
 
@@ -59,6 +68,7 @@ class TaskController extends Controller
                             'path'       => $doc->path,
                             'created_at' => $doc->created_at,
                         ]),
+                        'archived_at' => $task->archived_at,
                         'created_at'  => $task->created_at,
                         'updated_at'  => $task->updated_at,
                     ];
@@ -215,6 +225,52 @@ class TaskController extends Controller
         return response()->json([
             'success' => true,
             'task'    => $task->fresh(),
+        ]);
+    }
+
+    public function archive(Task $task): JsonResponse
+    {
+        $task->update(['archived_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'task'    => $task->fresh(),
+        ]);
+    }
+
+    public function unarchive(Task $task): JsonResponse
+    {
+        $task->update(['archived_at' => null]);
+
+        return response()->json([
+            'success' => true,
+            'task'    => $task->fresh(),
+        ]);
+    }
+
+    public function archiveCategory($categoryId): JsonResponse
+    {
+        $count = Task::where('task_category_id', $categoryId)
+            ->notArchived()
+            ->update(['archived_at' => now()]);
+
+        return response()->json([
+            'success' => true,
+            'count'   => $count,
+            'message' => 'Tasks archived successfully.',
+        ]);
+    }
+
+    public function unarchiveCategory($categoryId): JsonResponse
+    {
+        $count = Task::where('task_category_id', $categoryId)
+            ->archived()
+            ->update(['archived_at' => null]);
+
+        return response()->json([
+            'success' => true,
+            'count'   => $count,
+            'message' => 'Tasks unarchived successfully.',
         ]);
     }
 

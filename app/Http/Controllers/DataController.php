@@ -63,12 +63,13 @@ class DataController extends Controller
         $activeProspects = Client::where('status', 'prospect')->count();
 
         // 5. completedTasks (based on TaskCategory.type = 'done')
-        $completedTasks = Task::whereHas('category', function ($q) {
-            $q->where('type', 'done');
-        })->count();
+        $completedTasks = Task::notArchived()
+            ->whereHas('category', function ($q) {
+                $q->where('type', 'done');
+            })->count();
 
         // 6. taskCompletionRate
-        $totalTasks = Task::count();
+        $totalTasks = Task::notArchived()->count();
         $taskCompletionRate = $totalTasks > 0
             ? round(($completedTasks / $totalTasks) * 100) . "%"
             : "0%";
